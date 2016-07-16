@@ -3,7 +3,7 @@ function sys = createDircolNlConGrads2(sys)
     % Outputs a pointer to a function 
     %   gradf(x0, x1, u0, u1, T, t0, np)
 
-    syms x0 x1 u0 u1 t0 T h np dummy
+    syms x0 x1 u0 u1 t0 T h np dummy real
     d = sym('d_%d', [1 sys.nStates]).';
     x0 = sym('x0_%d', [1 sys.nStates]).';
     x1 = sym('x1_%d', [1 sys.nStates]).';
