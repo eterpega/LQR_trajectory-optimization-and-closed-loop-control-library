@@ -1,0 +1,9 @@
+function x_dot = pointMassPendulumEom(t, x, u, param)
+g = param.g;
+l1 = param.l1;
+m1 = param.m1;
+q1 = x(1);
+q1_dot = x(2);
+x_dot(1:1) = x(2:2);
+x_dot(2:2) = pointMassPendulum_auto(g,l1,m1,q1,u);
+x_dot = x_dot';
