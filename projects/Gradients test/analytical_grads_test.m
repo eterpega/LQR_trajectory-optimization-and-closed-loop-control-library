@@ -6,9 +6,10 @@ load('pointMassPendulumSys.mat')
 p.m1 = 2; p.l1 = 1; p.g = 9.81;
 sys.param = p;
 
-% % If parameters change, run these two lines to update gradient function
-% sys = createDircolNlConGrads2(sys);
-% save([sys.name 'Sys.mat'], 'sys');
+% If parameters change, run these two lines to update gradient function
+sys = createDircolNlConGrads2(sys);
+save([sys.name 'Sys.mat'], 'sys');
+return;
 
 method = 'dircol';
 nPoints = 20;
