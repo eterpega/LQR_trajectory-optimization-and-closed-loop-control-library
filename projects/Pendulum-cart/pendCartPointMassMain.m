@@ -8,10 +8,12 @@ load('pendulumCartPointMassSys.mat', 'sys');
 % p.b = 0;
 % sys.param = p;
 
-% % If parameters change, run these two lines to update gradient function
-% sys = createDircolNlConGrads2(sys);
-% save([sys.name 'Sys.mat'], 'sys');
-% return
+% If parameters change, run these two lines to update gradient function
+tic
+sys = createDircolNlConGrads2(sys);
+toc
+save([sys.name 'Sys.mat'], 'sys');
+return
 
 p.m1 = 2.0; p.m2 = 0.5; p.g = 9.81; p.l = 0.5; % p.b = 0;
 sys.param = p;

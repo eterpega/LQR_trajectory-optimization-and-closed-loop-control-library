@@ -41,7 +41,7 @@ function sys = createDircolNlConGrads2(sys)
     % Create defect expression
     defect = x_dot_c - f_c;
     defect = subs(defect, h, T/(np-1));
-    assume(defect, 'real'); % Not sure if this helps, but can't hurt
+    assume(defect, 'real');
     decvars = [x0; x1; u0; u1; T];
     disp('Calculating symbolic gradient expression');
     gradfSym = jacobian(defect, decvars).';
