@@ -8,7 +8,7 @@ load('pendulumCartPointMassSys.mat', 'sys');
 % p.b = 0;
 % sys.param = p;
 
-% % % If parameters change, run these two lines to update gradient function
+% % If parameters change, run these two lines to update gradient function
 % sys = createDircolNlConGrads2(sys);
 % save([sys.name 'Sys.mat'], 'sys');
 % return
@@ -27,8 +27,8 @@ xf = [0 pi 0 0]';
 % guess.T = 3;
 % guess.traj(4,:) = (pi/guess.T)*ones(1, nPoints);
 % guess.u = zeros(1, nPoints);
-% guess = 0;
-guess = 'pendulumCartPointMass_40_dircol_1Tsq_20uMx_(2)';
+guess = 0;
+% guess = 'pendulumCartPointMass_40_dircol_1Tsq_20uMx_(2)';
 
 
 xLims = [-2*.8 -2*pi -Inf -Inf; 2*.8 2*pi Inf Inf]';
