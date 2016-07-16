@@ -1,0 +1,1 @@
+function [t, traj, u] = simulateTvLqr(sim, sys, lqr)
