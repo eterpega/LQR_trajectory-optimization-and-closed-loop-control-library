@@ -13,13 +13,13 @@ function sys = createDircolNlConGrads2(sys)
     % Create a list of variables that represent physical parameters of
     % system
     vars = symvar(dynFun);
-    paramVars = [];
+    physPropVars = [];  % Physical properties variables (mass, length etc)
     for k = 1:length(vars)
         if isfield(sys.param, char(vars(k)))
-            paramVars = [paramVars vars(k)];
+            physPropVars = [physPropVars vars(k)];
         end
     end
-    paramVars = sort(paramVars);
+    physPropVars = sort(physPropVars);
     % Swap qi, qi_dot etc for array of state values
     % Assumption is all coordinate variables begin with 'q' - need to fix
     % this
@@ -48,5 +48,5 @@ function sys = createDircolNlConGrads2(sys)
     disp('Saving numeric matlabFunction');
     % Save numeric function. One extra dummy argument so calling format
     % matches numeric central difference function
-    sys.dcGrads = matlabFunction(gradfSym, 'File', [sys.name 'DcGrads'], 'vars', {x0, x1, u0, u1, T, t0, np, paramVars});
+    sys.dcGrads = matlabFunction(gradfSym, 'File', [sys.name 'DcGrads'], 'vars', {x0, x1, u0, u1, T, t0, np, physPropVars, dummy});
 end
