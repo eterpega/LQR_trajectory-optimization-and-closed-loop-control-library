@@ -3,6 +3,8 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
     
     % System mechanics properties
     param.physProp = orderfields(sys.param);
+    % Same but as vector sorted by field name
+    param.physPropVec = cell2mat(struct2cell(param.physProp))';
     % Trajectory optimization parameters
     param.nKnotPoints = nPoints;
     param.nStates = sys.nStates;
@@ -191,7 +193,7 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirCol(decVars, param)
         if nargout > 2
 %             gradc = param.nlGradf(x0, x1, u0, u1, T, param.nKnotPoints);
 %             gradc = dircolFiniteDiffGrads(x0, x1, u0, u1, T, t(n), param.physProp);
-            gradc = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, cell2mat(struct2cell(param.physProp))', param);
+            gradc = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
             d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
             d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
             d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
