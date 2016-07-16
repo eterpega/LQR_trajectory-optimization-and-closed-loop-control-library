@@ -3,7 +3,7 @@ function sys = createDircolNlConGrads2(sys)
     % Outputs a pointer to a function 
     %   gradf(x0, x1, u0, u1, T, t0, np)
 
-    syms x0 x1 u0 u1 t0 T h np dummy real
+    syms x0 x1 u0 u1 t0 T h np dummy
     d = sym('d_%d', [1 sys.nStates]).';
     x0 = sym('x0_%d', [1 sys.nStates]).';
     x1 = sym('x1_%d', [1 sys.nStates]).';
@@ -13,13 +13,13 @@ function sys = createDircolNlConGrads2(sys)
     % Create a list of variables that represent physical parameters of
     % system
     vars = symvar(dynFun);
-    physPropVars = [];  % Physical properties variables (mass, length etc)
+    paramVars = [];
     for k = 1:length(vars)
         if isfield(sys.param, char(vars(k)))
-            physPropVars = [physPropVars vars(k)];
+            paramVars = [paramVars vars(k)];
         end
     end
-    physPropVars = sort(physPropVars);
+    paramVars = sort(paramVars);
     % Swap qi, qi_dot etc for array of state values
     % Assumption is all coordinate variables begin with 'q' - need to fix
     % this
@@ -41,12 +41,12 @@ function sys = createDircolNlConGrads2(sys)
     % Create defect expression
     defect = x_dot_c - f_c;
     defect = subs(defect, h, T/(np-1));
-    assume(defect, 'real'); % Not sure if this helps, but can't hurt
+    assume(defect, 'real');
     decvars = [x0; x1; u0; u1; T];
     disp('Calculating symbolic gradient expression');
     gradfSym = jacobian(defect, decvars).';
     disp('Saving numeric matlabFunction');
     % Save numeric function. One extra dummy argument so calling format
     % matches numeric central difference function
-    sys.dcGrads = matlabFunction(gradfSym, 'File', [sys.name 'DcGrads'], 'vars', {x0, x1, u0, u1, T, t0, np, physPropVars, dummy});
+    sys.dcGrads = matlabFunction(gradfSym, 'File', [sys.name 'DcGrads'], 'vars', {x0, x1, u0, u1, T, t0, np, paramVars});
 end
