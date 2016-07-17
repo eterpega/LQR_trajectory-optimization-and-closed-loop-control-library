@@ -209,7 +209,7 @@ end
 function gradf = dircolFiniteDiffGrads(x0, x1, u0, u1, T, t0, ~, ~, param)
     % Use central finite diffences to calculate gradients for dynamics function.
     % Advantage of doing this ourselves is we can use our
-    % knowledge that any constraint only depends on x0, x1, u0, u1 and T,
+    % knowledge that any constraint only depends on the current x0, x1, u0, u1 and T,
     % and none of the other decision variables. So should be quicker than
     % using fmincon's finite differences
 
