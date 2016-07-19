@@ -1,5 +1,5 @@
 function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType, cost, nPoints, x0, xf, guess, xLims, uMax, tLims)
-    clear varss; close all;
+    close all; clear functions;
     
     % System mechanics properties
     param.physProp = orderfields(sys.param);
@@ -19,7 +19,8 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
     % Check method
     if strcmp(method, 'dircol')
         uLen = nPoints;
-        nlConFun = @nlConDirCol;
+%         nlConFun = @nlConDirCol;
+        nlConFun = @nlConDirColPar;
         % See what type of gradients we've been asked to use
         if ~strcmp(gradType, '')
             switch gradType
@@ -37,7 +38,7 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
             % Not specified, so let fmincon calculate gradients (slow!)
             useGrads = false;
         end
-                    
+
     elseif strcmp(method, 'rk4')
         uLen = nPoints-1;
         nlConFun = @nlConRk4;
@@ -75,7 +76,7 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
         'MaxFunEvals', 10000000, ...
         'UseParallel','always', ...
         'Display', 'iter-detailed', ...
-        'MaxIter', 5 ...
+        'MaxIter', 1000000 ...
     );
 % MaxIter 1000000
 %             'FiniteDifferenceType', 'central' ...
@@ -91,9 +92,9 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
 
     lb = [x0' repmat(xmin', 1, param.nKnotPoints-2) xf' -uMax*ones(1, uLen) tmin];
     ub = [x0' repmat(xmax', 1, param.nKnotPoints-2) xf' uMax*ones(1, uLen) tmax];
-    tic
+    timeStart = tic;
     [x, fval, exitflag, output] = fmincon(@(decVars)costfun(decVars, param), guess, [], [], [], [], lb, ub, @(decVars) nlConFun(decVars, param), options);
-    toc
+    disp(['Trajectory optimization took ' num2str(toc(timeStart)/60, 3) ' minutes']);
     % Repackage decision variables as states, controls and end time
     T = x(param.tIdx);
     traj = reshape(x(param.xIdx(1):param.xIdx(2)), param.nStates, param.nKnotPoints);
@@ -105,9 +106,9 @@ function [cost, grad] = costfun(decVars, param)
     T = decVars(param.tIdx);
     
     cost = param.cost.u*sum(u.^2) + param.cost.T*T^2;
-    if nargout > 1
+%     if nargout > 1
         grad = [zeros(1, param.nStates*param.nKnotPoints) param.cost.u*2*u param.cost.T*2*T];
-    end
+%     end
 end
 
 function plotPhaseDiagram(x, u, param)
@@ -122,14 +123,10 @@ function plotPhaseDiagram(x, u, param)
     end
     if ~(callCount == 1) && rem(callCount, 10) == 0
         for n = 1:nStates/2
-%         disp(num2str(callCount));
             tStr = ['q' num2str(n)];
             subplot(nStates/2+1, 1, n);
             plot(x(n, :), x(n+nStates/2, :), '-+'); grid on;
             xlabel(tStr); ylabel([tStr ' dot']);
-%             subplot(2, 1, 2);
-%             plot(x(2, :), x(4, :), '-+'); grid on;
-%             xlabel('theta'); ylabel('theta_dot');
         end
         subplot(nStates/2+1, 1, nStates/2+1);
         plot(u);
@@ -176,7 +173,9 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirCol(decVars, param)
     % Step size
     h = t(2) - t(1);
     defects = zeros(param.nStates, param.nKnotPoints-1);
-    if nargout > 2, d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); end
+%     if nargout > 2, d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); end
+%     if nargout > 2, d_ceq_flat = zeros(param.nStates*2+2+1, (param.nKnotPoints-1)*param.nStates); end
+%     parfor n = 1:param.nKnotPoints-1;
     for n = 1:param.nKnotPoints-1;
         x0 = x(:, n);
         x1 = x(:, n+1);
@@ -191,13 +190,62 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirCol(decVars, param)
         f_c = param.dynFun(t_c, x_c, u_c, param.physProp); 
         defects(:, n) = x_dot_c - f_c;
         if nargout > 2
-%             gradc = param.nlGradf(x0, x1, u0, u1, T, param.nKnotPoints);
-%             gradc = dircolFiniteDiffGrads(x0, x1, u0, u1, T, t(n), param.physProp);
-            gradc = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
-            d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
-            d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
-            d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
+            d_ceq_flat{n} = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
+%             d_ceq_flat(:, (n-1)*2+1:(n-1)*2+2) = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
+            
+%             d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
+%             d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
+%             d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
         end
+    end
+    defects = reshape(defects, 1, param.nStates*(param.nKnotPoints-1));
+    ceq = defects;
+    % No inequality constraints
+    cineq = [];
+    d_cineq = [];
+end
+
+function [cineq, ceq, d_cineq, d_ceq] = nlConDirColPar(decVars, param)
+    T = decVars(param.tIdx);
+    x = reshape(decVars(param.xIdx(1):param.xIdx(2)), param.nStates, param.nKnotPoints);
+    u = decVars(param.uIdx(1):param.uIdx(2));
+    % Plot phase diagram
+    plotPhaseDiagram(x, u, param);
+    % Create time vector
+    t = linspace(0, T, param.nKnotPoints);
+    % Step size
+    h = t(2) - t(1);
+    defects = zeros(param.nStates, param.nKnotPoints-1);
+%     if nargout > 2, d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); end
+%     if nargout > 2, d_ceq_flat = zeros(param.nStates*2+2+1, (param.nKnotPoints-1)*param.nStates); end
+    parfor n = 1:param.nKnotPoints-1;
+%     for n = 1:param.nKnotPoints-1;
+        x0 = x(:, n);
+        x1 = x(:, n+1);
+        u0 = u(n);
+        u1 = u(n+1);
+        f0 = param.dynFun(t(n), x0, u0, param.physProp);
+        f1 = param.dynFun(t(n+1), x1, u1, param.physProp); % pendulum_cart_eom
+        x_c = .5*(x0 + x1) + .125*h*(f0-f1);
+        x_dot_c = 3*(x1 - x0)/(2*h) - .25*(f0+f1); 
+        u_c = (u0 + u1)/2;  % First order hold (linear)
+        t_c = (t(n)+t(n+1))/2;
+        f_c = param.dynFun(t_c, x_c, u_c, param.physProp); 
+        defects(:, n) = x_dot_c - f_c;
+%         if nargout > 2
+            d_ceq_flat{n} = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
+%             d_ceq_flat(:, (n-1)*2+1:(n-1)*2+2) = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
+            
+%             d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
+%             d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
+%             d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
+%         end
+    end
+    d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); 
+    for n = 1:param.nKnotPoints-1
+        d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = d_ceq_flat{n}(1:2*param.nStates, 1:param.nStates);
+        d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = d_ceq_flat{n}(param.nStates*2+(1:2), 1:param.nStates);
+        d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = d_ceq_flat{n}(end, 1:param.nStates);
     end
     defects = reshape(defects, 1, param.nStates*(param.nKnotPoints-1));
     ceq = defects;

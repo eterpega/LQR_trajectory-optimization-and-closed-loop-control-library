@@ -19,7 +19,7 @@ p.m1 = 2.0; p.m2 = 0.5; p.g = 9.81; p.l = 0.5; % p.b = 0;
 sys.param = p;
 
 method = 'dircol';
-gradients = 'centraldiff'; % solvergrads/centraldiff/analytic
+gradients = 'analytic'; % solvergrads/centraldiff/analytic
 nPoints = 80;
 x0 = [0 0 0 0]';
 % xf = [0.8 pi 0 0]';
