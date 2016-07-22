@@ -34,15 +34,15 @@ xf = [0 pi pi 0 0 0]';
 % guess = 'trajectories\doublePendCart_2ndequib_120_dircol_1usq_25uMx';%'doublePendCart_30_dircol_1Tsq_1usq_40uMx';
 
 guess.traj = (xf-x0)*linspace(0, 1, nPoints);
-guess.T = 1.5;
+guess.T = 2;
 guess.traj(5:6,:) = (pi/guess.T)*ones(2, nPoints);
 guess.u = zeros(1, nPoints);
 
 % guess = 0;
 
 xLims = [-0.7 -Inf -Inf -Inf -Inf -Inf; 0.7 Inf Inf Inf Inf Inf]';
-uMax = 25;
-tLims = [2 2];
+uMax = 50;
+tLims = [2.4 2.4];
 cost.u = 1;%30/nPoints;
 cost.T = 0;%10;%50;
 [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradients, cost, nPoints, x0, xf, guess, xLims, uMax, tLims);
