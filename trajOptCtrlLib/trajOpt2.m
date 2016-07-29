@@ -20,6 +20,10 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
     if strcmp(method, 'dircol')
         uLen = nPoints;
 %         nlConFun = @nlConDirCol;
+        % At the moment calculate constraints and gradients in parfor loop.
+        % This might be slower than regular for loop when multiple workers
+        % are unavailable. Perhaps add feature to check for multiple
+        % workers and choose function accordingly.
         nlConFun = @nlConDirColPar;
         % See what type of gradients we've been asked to use
         if ~strcmp(gradType, '')
@@ -38,11 +42,11 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
             % Not specified, so let fmincon calculate gradients (slow!)
             useGrads = false;
         end
-
     elseif strcmp(method, 'rk4')
         uLen = nPoints-1;
         nlConFun = @nlConRk4;
         % Don't support gradients with rk4 -- yet.
+        useGrads = false;
     else
         error('Unknown method specified');
     end
@@ -87,7 +91,6 @@ function [traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradType,
         );
 %             'DerivativeCheck', 'on' ...
         param.dynSym = sys.x_dot_sym;
-%         param.nlGradf = createNlConGrads(guess, param);
     end
 
     lb = [x0' repmat(xmin', 1, param.nKnotPoints-2) xf' -uMax*ones(1, uLen) tmin];
@@ -148,10 +151,10 @@ function [cineq, ceq] = nlConRk4(decVars, param)
     defects = zeros(param.nStates, param.nKnotPoints-1);
     for n = 1:param.nKnotPoints-1;
         x0 = x(:, n);
-        k1 = param.dynFun(t(n), x0, u(n), param);
-        k2 = param.dynFun(t(n) + h/2, x0 + k1*h/2, u(n), param);
-        k3 = param.dynFun(t(n) + h/2, x0 + k2*h/2, u(n), param);
-        k4 = param.dynFun(t(n) + h, x0 + h*k3, u(n), param);
+        k1 = param.dynFun(t(n), x0, u(n), param.physProp);
+        k2 = param.dynFun(t(n) + h/2, x0 + k1*h/2, u(n), param.physProp);
+        k3 = param.dynFun(t(n) + h/2, x0 + k2*h/2, u(n), param.physProp);
+        k4 = param.dynFun(t(n) + h, x0 + h*k3, u(n), param.physProp);
         x1 = (x0 + (h/6)*(k1 + 2*k2 + 2*k3 + k4));
         defects(:, n) = x1 - x(:, n+1);
     end
@@ -190,12 +193,10 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirCol(decVars, param)
         f_c = param.dynFun(t_c, x_c, u_c, param.physProp); 
         defects(:, n) = x_dot_c - f_c;
         if nargout > 2
-            d_ceq_flat{n} = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
-%             d_ceq_flat(:, (n-1)*2+1:(n-1)*2+2) = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
-            
-%             d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
-%             d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
-%             d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
+            gradc = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);            
+            d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
+            d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
+            d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
         end
     end
     defects = reshape(defects, 1, param.nStates*(param.nKnotPoints-1));
@@ -216,10 +217,7 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirColPar(decVars, param)
     % Step size
     h = t(2) - t(1);
     defects = zeros(param.nStates, param.nKnotPoints-1);
-%     if nargout > 2, d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); end
-%     if nargout > 2, d_ceq_flat = zeros(param.nStates*2+2+1, (param.nKnotPoints-1)*param.nStates); end
     parfor n = 1:param.nKnotPoints-1;
-%     for n = 1:param.nKnotPoints-1;
         x0 = x(:, n);
         x1 = x(:, n+1);
         u0 = u(n);
@@ -232,15 +230,9 @@ function [cineq, ceq, d_cineq, d_ceq] = nlConDirColPar(decVars, param)
         t_c = (t(n)+t(n+1))/2;
         f_c = param.dynFun(t_c, x_c, u_c, param.physProp); 
         defects(:, n) = x_dot_c - f_c;
-%         if nargout > 2
-            d_ceq_flat{n} = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
-%             d_ceq_flat(:, (n-1)*2+1:(n-1)*2+2) = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
-            
-%             d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = gradc(1:2*param.nStates, 1:param.nStates);
-%             d_ceq(param.nKnotPoints*param.nStates+(n-1)+(1:2), (n-1)*param.nStates+(1:param.nStates)) = gradc(param.nStates*2+(1:2), 1:param.nStates);
-%             d_ceq(length(decVars), (n-1)*param.nStates+(1:param.nStates)) = gradc(end, 1:param.nStates);
-%         end
+        d_ceq_flat{n} = param.nlGradf(x0, x1, u0, u1, T, t(n), param.nKnotPoints, param.physPropVec, param);
     end
+    % Unpack gradients from cell array into correct format
     d_ceq = zeros(length(decVars), (param.nKnotPoints-1)*param.nStates); 
     for n = 1:param.nKnotPoints-1
         d_ceq((n-1)*param.nStates+(1:2*param.nStates), (n-1)*param.nStates+(1:param.nStates)) = d_ceq_flat{n}(1:2*param.nStates, 1:param.nStates);
