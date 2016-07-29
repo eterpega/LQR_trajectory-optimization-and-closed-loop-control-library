@@ -13,18 +13,19 @@ p.g = 9.81;
 sys.param = p;
 
 disp('Loading nominal trajectory');
-[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
+[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_240_dircol_1Tsq_1usq_50uMx.mat');%'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
 [~, nKnotPoints] = size(xnom);
 h = T/(nKnotPoints-1);
 % Nominal trajectory time vector
 t0 = linspace(0, T, nKnotPoints);
 
 % Create LQR structure
-% lqr.Q = .5*eye(6);%diag([5 5 5 1 1 1]);
-lqr.Q = diag([1 5 5 .5 .5 .5]);
-lqr.R = 5;
+lqr.Q = 100*eye(6);
+% lqr.Q = diag([1 5 5 1 1 1]);
+% lqr.Q = diag([1 2.5 2.5 .5 .5 .5]);
+lqr.R = 1;
 % lqr.Q_f = .5*eye(6);%diag([5 5 5 1 1 1]); %5*eye(sys.nStates);
-lqr.Q_f = diag([1 5 5 .5 .5 .5]);
+lqr.Q_f = lqr.Q; %diag([1 5 5 .5 .5 .5]);
 
 lqr.nSteps = nKnotPoints; % Create a gain for every knot point
 % Get time varying LQR controller
@@ -54,7 +55,7 @@ disp('Simulating open- and closed-loop trajectories of perturbed system');
 
 % Closed loop simulation
 [t_vect_cl, x_traj_cl, u_traj_cl] = rk4(@(t, x, u) sys.x_dot_fun(t, x, u, sys.param), u_cl_fun, [0 T], x_zero, lqr.nSteps*10);
-[t_vect_cl2, x_traj_cl2] = od`e45(@(t, x) sys.x_dot_fun(t, x, u_cl_fun(t, x), sys.param), [t0(1) t0(end)], x_zero);
+[t_vect_cl2, x_traj_cl2] = ode45(@(t, x) sys.x_dot_fun(t, x, u_cl_fun(t, x), sys.param), [t0(1) t0(end)], x_zero);
 
 disp('Plot system response comparison');
 % Plot comparison of state trajectories

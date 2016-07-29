@@ -64,7 +64,7 @@ function [lqr, u_cl_fun, tIdxFun] = tvLqr(sys, lqr, tspan, x0, u0)
         Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
         tn = S_t_traj(n);
         K(n, :) = R_inv*Blin_t(tn)'*Sn;
-        eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
+%         eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
     end
     % Flip K so it's forwards in time
     lqr.K = flip(K, 1);

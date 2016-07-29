@@ -32,6 +32,7 @@ param.m1 = .5;
 param.m2 = .5;
 param.b = 0;
 sys.param = param;
+sys.physProp = param;
 
 disp('Loading nominal trajectory');
 % pendulumCartDirCol_120_ip_usq_200tsq_rk4
