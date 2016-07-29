@@ -29,20 +29,20 @@ gradients = 'centraldiff';  % solvergrads/centraldiff/analytic
 
 nPoints = 150;
 x0 = [0 0 0 0 0 0]';
-xf = [0 0 pi 0 0 0]';
+xf = [0 pi pi 0 0 0]';
 
-% guess = 'doublePendCart_240_dircol_1usq_50uMx';%'doublePendCart_30_dircol_1Tsq_1usq_40uMx';
+guess = 'doublePendCart_240_dircol_1Tsq_1usq_50uMx';%'doublePendCart_30_dircol_1Tsq_1usq_40uMx';
 
-guess.traj = (xf-x0)*linspace(0, 1, nPoints);
-guess.T = 2.5;
-guess.traj(5:6,:) = (pi/guess.T)*ones(2, nPoints);
-guess.u = zeros(1, nPoints);
+% guess.traj = (xf-x0)*linspace(0, 1, nPoints);
+% guess.T = 2.5;
+% guess.traj(5:6,:) = (pi/guess.T)*ones(2, nPoints);
+% guess.u = zeros(1, nPoints);
 
 % guess = 0;
 
-xLims = [-0.7 -Inf -Inf -8 -16 -16; 0.7 Inf Inf 8 16 16]';
-uMax = 25;
-tLims = [.1 3];
+xLims = [-0.7 -Inf -Inf -8 -8 -8; 0.7 Inf Inf 8 8 8]';
+uMax = 50;
+tLims = [.1 5];
 cost.u = 1;%30/nPoints;
-cost.T = 0;%10;%50;
-[traj, u, T, param, exitflag, output] = trajOpt2(sys, method, gradients, cost, nPoints, x0, xf, guess, xLims, uMax, tLims);
+cost.T = 1;%10;%50;
+[traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradients, cost, nPoints, x0, xf, guess, xLims, uMax, tLims);

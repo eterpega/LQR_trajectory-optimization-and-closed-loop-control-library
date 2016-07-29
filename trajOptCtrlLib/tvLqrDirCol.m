@@ -52,6 +52,16 @@ function [lqr, u_cl_fun, tIdxFun] = tvLqr(sys, lqr, tspan, x0, u0)
     
 %     nPoints = length(x0);
 
+% %%% DEBUGGING
+% 
+%     h = (tf-t0)/(lqr.nSteps-1)
+%     for n = 1:lqr.nSteps
+%         t = (n-1)*h
+%         temp{n} = Alin_t((n-1)*h);
+%     end
+%     max(cell2mat(temp(:)))
+% %%% END OF DEBUGGING
+
     R_inv = inv(lqr.R);
     S_f = lqr.Q_f;
     S_dot = @(t, S, u) -(S*Alin_t(t) + Alin_t(t)'*S - S*Blin_t(t)*R_inv*Blin_t(t)'*S + lqr.Q);
@@ -68,6 +78,14 @@ function [lqr, u_cl_fun, tIdxFun] = tvLqr(sys, lqr, tspan, x0, u0)
     end
     % Flip K so it's forwards in time
     lqr.K = flip(K, 1);
+    
+    %%% DEBUGGING
+    for n = 1:length(K), disp([num2str(n) ', ' num2str(K(n, :))]); end
+    figure; hold on;
+    for n=1:6, plot(x0(n, :)); end
+    legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot')
+    %%% END DEBUGGING
+
     lqr.eVals = flip(eVals, 1);
     lqr.K_p = chebfun(lqr.K, 'equi');
     % Initialise u_lqr()

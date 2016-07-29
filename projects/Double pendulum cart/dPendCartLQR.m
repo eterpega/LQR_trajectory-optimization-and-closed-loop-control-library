@@ -4,30 +4,33 @@ disp('Loading system model');
 load('doublePendCartSys.mat', 'sys');
 syms u;
 sys.inputVars = u; % Needed for LQR. Need to resolve better.
-% 10 swg thick ali tube
-p.m1 = .125; p.b1 = 0;%.01;
-p.m2 = 0.19931639; p.I2 = 0.00338952; p.c2 = 0.21172; p.l2 = 0.422; p.b2 = 0.00125;
-% 2nd pendulum w/o bob
-p.m3 = 0.186976; p.I3 = 0.002831; p.c3 = 0.19704; p.l3 = 0.411; p.b3 = 0.00125;
+% 3/4 in x 18 swg
+p.m1 = 0.125; p.b1 = 0;%0.01;
+p.m2 = 0.098; p.I2 = 0.00205; p.c2 = 0.20956; p.l2 = 0.422; p.b2 = 0.00125;
+% 2nd pendulum with bob at end
+p.m3 = 0.13971; p.I3 = 0.0030865; p.c3 = 0.26557; p.l3 = 0.4; p.b3 = 0.005;
+% % 2nd pendulum w/o bob
+% p.m3 = 0.08646; p.I3 = 0.001446; p.c3 = 0.18; p.l3 = 0.411; p.b3 = 0.00125;
 p.g = 9.81;
 sys.param = p;
 
 disp('Loading nominal trajectory');
-[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_240_dircol_1Tsq_1usq_50uMx.mat');%'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
-[~, nKnotPoints] = size(xnom);
-h = T/(nKnotPoints-1);
+[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_240_dircol_1Tsq_1usq_50uMx.mat');   %doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+%'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
+[~, nPoints] = size(xnom);
+h = T/(nPoints-1);
 % Nominal trajectory time vector
-t0 = linspace(0, T, nKnotPoints);
+t0 = linspace(0, T, nPoints);
 
 % Create LQR structure
-lqr.Q = 100*eye(6);
-% lqr.Q = diag([1 5 5 1 1 1]);
+% lqr.Q = 100*eye(6);
+lqr.Q = .1*diag([1 5 5 0 0 0]);
 % lqr.Q = diag([1 2.5 2.5 .5 .5 .5]);
 lqr.R = 1;
 % lqr.Q_f = .5*eye(6);%diag([5 5 5 1 1 1]); %5*eye(sys.nStates);
 lqr.Q_f = lqr.Q; %diag([1 5 5 .5 .5 .5]);
 
-lqr.nSteps = nKnotPoints; % Create a gain for every knot point
+lqr.nSteps = nPoints; % Create a gain for every knot point
 % Get time varying LQR controller
 disp('Calculating finite horizon LQR gains');
 % [lqr, u_cl_fun, x0_p, u0_p, tIdxFun] = tvLqr(sys, lqr, [0 T], xnom, unom);
@@ -36,12 +39,12 @@ disp('Calculating finite horizon LQR gains');
 % Change initial state
 x_zero = [0 0 0 0 0 0];
 % x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
-% Perturb system physical properties
-sys.param.b1 = 0.25;
-sys.param.b2 = 0.0075;
-sys.param.m2 = sys.param.m2*1.05;
-sys.param.b3 = sys.param.b3*2;
-sys.param.m3 = sys.param.m3*1.05;
+% % Perturb system physical properties
+% sys.param.b1 = 0.25;
+% sys.param.b2 = 0.0075;
+% sys.param.m2 = sys.param.m2*1.05;
+% sys.param.b3 = sys.param.b3*2;
+% sys.param.m3 = sys.param.m3*1.05;
 
 % sys.param.b
 % ZOH input function
