@@ -98,16 +98,15 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
 %     lqrParam.K = flip(K, 1);
 
     % Test 
-    lqrParam.K = K;
     
-%     %%% DEBUGGING
-%     for n = 1:length(K), disp([num2str(n) ', ' num2str(lqrParam.K(n, :))]); end
-%     figure; hold on;
-%     for n=1:6, plot(x0(n, :)); end
-%     legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot')
-%     %%% END DEBUGGING
+    %%% DEBUGGING
+    for n = 1:length(K), disp([num2str(n) ', ' num2str(lqrParam.K(n, :))]); end
+    figure; hold on;
+    for n=1:6, plot(x0(n, :)); end
+    legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot')
+    %%% END DEBUGGING
 
-%     lqrParam.eVals = flip(eVals, 1);
+    lqrParam.eVals = flip(eVals, 1);
     lqrParam.K_p = chebfun(lqrParam.K, 'equi');
     % Initialise u_lqr()
     u_lqr(0, 0, lqrParam.K_p, tIdxFun);
