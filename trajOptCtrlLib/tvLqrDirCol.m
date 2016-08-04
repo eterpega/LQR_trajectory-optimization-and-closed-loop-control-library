@@ -65,7 +65,7 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
 %         linSysCtrb(n) = rank(thisCtrb);
         linSysCtrb(n) = rank(ctrb(A, B));
         % Work out ordinary LQR gains along trajectory (experiment)
-        [K(n, :), ~, ~] = lqr(A, B, lqrParam.Q, lqrParam.R);
+%         [K(n, :), ~, ~] = lqr(A, B, lqrParam.Q, lqrParam.R);
     end
     
 %     nPoints = length(x0);
@@ -78,34 +78,37 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
 %         temp{n} = Alin_t((n-1)*h);
 %     end
 %     max(cell2mat(temp(:)))
+%     u0(114) = (u0(113)+u0(115))/2;
 % %%% END OF DEBUGGING
 
-%     R_inv = inv(lqrParam.R);
-%     S_f = lqrParam.Q_f;
-%     S_dot = @(t, S, u) -(S*Alin_t(t) + Alin_t(t)'*S - S*Blin_t(t)*R_inv*Blin_t(t)'*S + lqrParam.Q);
-%     S_dot_wrapper = @(t, S, u) reshape(S_dot(t, reshape(S, sys.nStates, sys.nStates), u), sys.nStates^2, 1);
-%     % Solve differential Ricatti equation
-%     [S_t_traj, S_traj, ~] = rk4(S_dot_wrapper, @(t, S) 0, [tf t0], reshape(S_f, sys.nStates^2, 1), lqrParam.nSteps);
-%     K = zeros(length(S_t_traj), sys.nStates);
-%     eVals = zeros(length(S_t_traj), sys.nStates);
-%     for n=1:length(S_t_traj)
-%         Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
-%         tn = S_t_traj(n);
-%         K(n, :) = R_inv*Blin_t(tn)'*Sn;
-% %         eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
-%     end
-%     % Flip K so it's forwards in time
-%     lqrParam.K = flip(K, 1);
+    R_inv = inv(lqrParam.R);
+    S_f = lqrParam.Q_f;
+    S_dot = @(t, S, u) -(S*Alin_t(t) + Alin_t(t)'*S - S*Blin_t(t)*R_inv*Blin_t(t)'*S + lqrParam.Q);
+    S_dot_wrapper = @(t, S, u) reshape(S_dot(t, reshape(S, sys.nStates, sys.nStates), u), sys.nStates^2, 1);
+    % Solve differential Ricatti equation
+    [S_t_traj, S_traj, ~] = rk4(S_dot_wrapper, @(t, S) 0, [tf t0], reshape(S_f, sys.nStates^2, 1), lqrParam.nSteps);
+    K = zeros(length(S_t_traj), sys.nStates);
+    eVals = zeros(length(S_t_traj), sys.nStates);
+    for n=1:length(S_t_traj)
+        Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
+        tn = S_t_traj(n);
+        K(n, :) = R_inv*Blin_t(tn)'*Sn;
+%         eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
+    end
+    % Flip K so it's forwards in time
+    lqrParam.K = flip(K, 1);
 
-    % Test 
-    lqrParam.K = K;
+    % Test - using LQR calculated at each trajectory point rather than
+    % TVLQR
+%     lqrParam.K = K;
     
-%     %%% DEBUGGING
-%     for n = 1:length(K), disp([num2str(n) ', ' num2str(lqrParam.K(n, :))]); end
-%     figure; hold on;
-%     for n=1:6, plot(x0(n, :)); end
-%     legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot')
-%     %%% END DEBUGGING
+    %%% DEBUGGING
+    for n = 1:length(K), disp([num2str(n) ', ' num2str(lqrParam.K(n, :))]); end
+    figure; hold on;
+    for n=1:6, plot(x0(n, :)); end
+    plot(u0);
+    legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot', 'u')
+    %%% END DEBUGGING
 
 %     lqrParam.eVals = flip(eVals, 1);
     lqrParam.K_p = chebfun(lqrParam.K, 'equi');

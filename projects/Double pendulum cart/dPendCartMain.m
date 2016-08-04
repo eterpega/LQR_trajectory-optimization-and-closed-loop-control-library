@@ -27,22 +27,22 @@ sys.param = p;
 method = 'dircol';
 gradients = 'centraldiff';  % solvergrads/centraldiff/analytic
 
-nPoints = 300;
+nPoints = 80;
 x0 = [0 0 0 0 0 0]';
 xf = [0 pi pi 0 0 0]';
 
-guess = 'doublePendCart_150_dircol_1usq_50uMx';%'doublePendCart_30_dircol_1Tsq_1usq_40uMx';
+% guess = 'doublePendCart_150_dircol_1usq_50uMx';%'doublePendCart_30_dircol_1Tsq_1usq_40uMx';
 
 % guess.traj = (xf-x0)*linspace(0, 1, nPoints);
 % guess.T = 5;
 % guess.traj(5:6,:) = (pi/guess.T)*ones(2, nPoints);
 % guess.u = zeros(1, nPoints);
 
-% guess = 0;
+guess = 0;
 
 xLims = [-0.7 -Inf -Inf -8 -12 -12; 0.7 Inf Inf 8 12 12]';
 uMax = 50;
-tLims = [5 5];
-cost.u = 1;%30/nPoints;
-cost.T = 0;%10;%50;
+tLims = [0 5];
+cost.u = 0;%30/nPoints;
+cost.T = 10;%10;%50;
 [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradients, cost, nPoints, x0, xf, guess, xLims, uMax, tLims);
