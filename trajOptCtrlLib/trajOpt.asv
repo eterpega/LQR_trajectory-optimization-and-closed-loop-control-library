@@ -89,7 +89,7 @@ function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, 
             'GradObj', 'on', ...
             'GradConstr','on' ...
         );
-%             'DerivativeCheck', 'on', ...
+%             'DerivativeCheck', 'on' ...
         param.dynSym = sys.x_dot_sym;
     end
 
@@ -108,7 +108,7 @@ end
 function [cost, grad] = costfun(decVars, param)
     persistent R
     
-    if isempty(R)
+    if ~exist('R', 'var')
         % Create R
         n = param.nKnotPoints;
         % Second derivative finite difference matrix
@@ -118,10 +118,12 @@ function [cost, grad] = costfun(decVars, param)
 
     u = decVars(param.uIdx(1):param.uIdx(2))';
     T = decVars(param.tIdx);
-    cost = param.cost.u*sum(u.^2) + u'*R*u + param.cost.T*T^2;
+    
+    
+    cost = param.cost.u*sum(u.^2) + param.cost.T*T^2 + u'*R*u;
 %     A = diag([0 -2*ones(1,n-2) 0])+diag([0 ones(1,n-2)],1) + diag([ones(1,n-2) 0],-1)
 %     if nargout > 1
-    grad = [zeros(1, param.nStates*param.nKnotPoints) (param.cost.u*2*u' + 2*u'*R) param.cost.T*2*T];
+    grad = [zeros(1, param.nStates*param.nKnotPoints) param.cost.u*2*u param.cost.T*2*T +];
 %     end
 end
 
