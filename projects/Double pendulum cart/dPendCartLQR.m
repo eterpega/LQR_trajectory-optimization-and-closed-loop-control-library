@@ -16,13 +16,14 @@ sys.inputVars = u; % Needed for LQR. Need to resolve better.
 
 disp('Loading nominal trajectory');
 % Max ang vel 12 rad/s: doublePendCart_150_dircol_1usq_50uMx
-% Max ang vel 12 rad/s doublePendCart_300_dircol_1usq_50uMx
+% Max ang vel 12 rad/s doublePendCart_300_dircol_1usq_50uMx <- one I've worked on a lot
 % Max ang vel 16 rad/s: doublePendCart_150_dircol_1Tsq_1usq_50uMx
 % 1st equilib. Max ang vel ~8 rad/s: doublePendCart_150_dircol_1usq_25uMx
+% Smoothed u: doublePendCart_80_dircol_1usq_50uMx
 
 % lqr.Q = .1*diag([1 5 5 0 0 0]); lqr.R = 1; lqr.Q_f = lqr.Q;
 
-[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_300_dircol_1usq_50uMx.mat');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_80_dircol_1usq_50uMx.mat');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
 sys.param = param.physProp;
 %'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
 [~, nPoints] = size(xnom);
@@ -34,9 +35,9 @@ t0 = linspace(0, T, nPoints);
 % lqr.Q = .1*eye(6);
 % lqr.Q = .0001*diag([1 5 5 1 5 5]);
 lqr.Q = .1*diag([1 2.5 2.5 .05 .1 .1]);
-lqr.R = 200;
+lqr.R = 1;
 % lqr.Q_f = .5*eye(6);%diag([5 5 5 1 1 1]); %5*eye(sys.nStates);
-lqr.Q_f = lqr.Q; %diag([1 5 5 .5 .5 .5]);
+lqr.Q_f = zeros(6, 6);%diag([1 5 5 .5 .5 .5]);
 
 
 

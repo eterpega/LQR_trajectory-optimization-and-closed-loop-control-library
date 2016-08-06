@@ -87,6 +87,7 @@ function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, 
     if useGrads
         options = optimoptions(options, ...
             'GradObj', 'on', ...
+            'DerivativeCheck', 'on', ...
             'GradConstr','on' ...
         );
 %             'DerivativeCheck', 'on', ...
@@ -118,10 +119,10 @@ function [cost, grad] = costfun(decVars, param)
 
     u = decVars(param.uIdx(1):param.uIdx(2))';
     T = decVars(param.tIdx);
-    cost = param.cost.u*sum(u.^2) + u'*R*u + param.cost.T*T^2;
+    cost = param.cost.u*sum(u.^2) + param.cost.usmooth*u'*R*u + param.cost.T*T^2;
 %     A = diag([0 -2*ones(1,n-2) 0])+diag([0 ones(1,n-2)],1) + diag([ones(1,n-2) 0],-1)
 %     if nargout > 1
-    grad = [zeros(1, param.nStates*param.nKnotPoints) (param.cost.u*2*u' + 2*u'*R) param.cost.T*2*T];
+    grad = [zeros(1, param.nStates*param.nKnotPoints) (param.cost.u*2*u' + param.cost.usmooth*2*u'*R) param.cost.T*2*T];
 %     end
 end
 

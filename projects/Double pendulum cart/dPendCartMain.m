@@ -42,7 +42,8 @@ guess = 0;
 
 xLims = [-0.7 -Inf -Inf -8 -12 -12; 0.7 Inf Inf 8 12 12]';
 uMax = 50;
-tLims = [0 5];
-cost.u = 0;%30/nPoints;
-cost.T = 10;%10;%50;
+tLims = [4 4];
+cost.u = 1;%30/nPoints;
+cost.usmooth = 1;
+cost.T = 0;%10;%50;
 [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradients, cost, nPoints, x0, xf, guess, xLims, uMax, tLims);
