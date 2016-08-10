@@ -87,7 +87,6 @@ function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, 
     if useGrads
         options = optimoptions(options, ...
             'GradObj', 'on', ...
-            'DerivativeCheck', 'on', ...
             'GradConstr','on' ...
         );
 %             'DerivativeCheck', 'on', ...
@@ -107,22 +106,33 @@ function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, 
 end
 
 function [cost, grad] = costfun(decVars, param)
-    persistent R
+    persistent R S
     
     if isempty(R)
+        % Second derivative of u
         % Create R
         n = param.nKnotPoints;
         % Second derivative finite difference matrix
         A = diag([0 -2*ones(1,n-2) 0])+diag([0 ones(1,n-2)],1) + diag([ones(1,n-2) 0],-1);
         R = A.'*A;
+        % First derivative of velocity components
+        A = zeros(param.nKnotPoints, param.nStates*param.nKnotPoints);
+        nAccPts = param.nStates/2;
+        fwdfirstderiv = [zeros(1, nAccPts) -ones(1, nAccPts) zeros(1, nAccPts) ones(1, nAccPts)];
+        for k = 1:param.nKnotPoints-1
+            A(k, (k-1)*param.nStates+1:(k-1)*param.nStates+length(fwdfirstderiv)) = fwdfirstderiv;
+        end
+        S = A.'*A;
     end
 
+    x = decVars(param.xIdx(1):param.xIdx(2))';
     u = decVars(param.uIdx(1):param.uIdx(2))';
     T = decVars(param.tIdx);
-    cost = param.cost.u*sum(u.^2) + param.cost.usmooth*u'*R*u + param.cost.T*T^2;
+    cost = param.cost.u*sum(u.^2) + param.cost.accSmooth*x.'*S*x + param.cost.uSmooth*u'*R*u + param.cost.T*T^2;
 %     A = diag([0 -2*ones(1,n-2) 0])+diag([0 ones(1,n-2)],1) + diag([ones(1,n-2) 0],-1)
 %     if nargout > 1
-    grad = [zeros(1, param.nStates*param.nKnotPoints) (param.cost.u*2*u' + param.cost.usmooth*2*u'*R) param.cost.T*2*T];
+%     grad = [zeros(1, param.nStates*param.nKnotPoints) (param.cost.u*2*u' + param.cost.usmooth*2*u'*R) param.cost.T*2*T];
+    grad = [param.cost.accSmooth*2*x'*S (param.cost.u*2*u' + param.cost.uSmooth*2*u'*R) param.cost.T*2*T];
 %     end
 end
 
@@ -136,7 +146,7 @@ function plotPhaseDiagram(x, u, param)
     else
         callCount = callCount+1;
     end
-    if ~(callCount == 1) && rem(callCount, 10) == 0
+    if callCount == 1 || ~rem(callCount, 10)
         for n = 1:nStates/2
             tStr = ['q' num2str(n)];
             subplot(nStates/2+1, 1, n);
