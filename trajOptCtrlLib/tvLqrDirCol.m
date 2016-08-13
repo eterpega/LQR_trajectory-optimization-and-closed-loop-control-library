@@ -4,29 +4,7 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
     
     t0 = tspan(1);
     tf = tspan(2);
-% %     % Create Chebyshev polynomial representation of trajectories
-% %     x0_p = chebfun(x0', 'equi');
-% %     u0_p = chebfun(u0', 'equi');
-% %     % Anonymous function for mapping time to range -1:1 for chebfun
-% %     % representations
     tIdxFun = @(t) -1+2*(t-t0)/(tf-t0);
-    
-% %     [nStates, nPoints] = size(x0);
-% %     ts = linspace(0, tf, nPoints*10-1);
-% %     xs = zeros(nStates, nPoints);
-% %     us = zeros(1, nPoints);
-% %     for k = 1:length(ts)
-% %         [xs(:, k), us(k)] = xuOft(ts(k));
-% %     end
-% %     t = linspace(0, tf, nPoints);
-% %     figure; hold on; set(gca,'xtick', linspace(0, tf, nPoints)); grid on;
-% %     plot(t, x0(1, :), t, x0(2, :), t, x0(3, :), t, x0(4, :));
-% %     plot(ts, xs(1, :), ts, xs(2, :), ts, xs(3, :), ts, xs(4, :));
-% % %     plot(t, x0(1, :), ts, xs(1, :)); 
-% %     legend('Nominal', 'Interpolated');
-% %     figure; hold on; set(gca,'xtick', linspace(0, tf, nPoints)); grid on;
-% %     plot(t, u0, '+', ts, us, '.');
-% %     legend('Nominal', 'Interpolated');
     
     % Initialise xuOft()
     xuOft(0, x0, u0, tspan, sys);
@@ -58,80 +36,36 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
         t = (n-1)*h;
         A = Alin_t(t);
         B = Blin_t(t);
-%         thisCtrb = [];
-%         for k = 1:sys.nStates
-%             thisCtrb = [thisCtrb A^(k-1)*B];
-%         end
-%         linSysCtrb(n) = rank(thisCtrb);
         linSysCtrb(n) = rank(ctrb(A, B));
-        % Work out ordinary LQR gains along trajectory (experiment)
-%         [K(n, :), ~, ~] = lqr(A, B, lqrParam.Q, lqrParam.R);
     end
-    
-%     nPoints = length(x0);
-
-% %%% DEBUGGING
-% 
-    
-%     for n = 1:lqr.nSteps
-%         t = (n-1)*h
-%         temp{n} = Alin_t((n-1)*h);
-%     end
-%     max(cell2mat(temp(:)))
-%     u0(114) = (u0(113)+u0(115))/2;
-% %%% END OF DEBUGGING
+    if ~all(linSysCtrb == sys.nStates)
+        error('Not all linearized systems controllable');
+    end
 
     R_inv = inv(lqrParam.R);
     S_f = lqrParam.Q_f;
+    % Create anonymous S_dot function
     S_dot = @(t, S, u) -(S*Alin_t(t) + Alin_t(t)'*S - S*Blin_t(t)*R_inv*Blin_t(t)'*S + lqrParam.Q);
     S_dot_wrapper = @(t, S, u) reshape(S_dot(t, reshape(S, sys.nStates, sys.nStates), u), sys.nStates^2, 1);
     % Solve differential Ricatti equation
-%     % Fixed time step (using rk4())
-%     [S_t_traj, S_traj, ~] = rk4(S_dot_wrapper, @(t, S) 0, [tf t0], reshape(S_f, sys.nStates^2, 1), lqrParam.nSteps);
-    % Variable time step using ode45()
-    [S_t_traj, S_traj] = ode45(@(t, S) S_dot_wrapper(t, S, 0), [tf t0], reshape(S_f, sys.nStates^2, 1));
-    S_t_traj = flip(S_t_traj);
-    S_traj = flip(S_traj);
-%     K = zeros(length(S_t_traj), sys.nStates);
+    S_sol = ode45(@(t, S) S_dot_wrapper(t, S, 0), [tf t0], reshape(S_f, sys.nStates^2, 1));
+    S_t_traj = S_sol.x;
+    S_traj = S_sol.y;
     K = zeros(lqrParam.nSteps, sys.nStates);
-    eVals = zeros(length(S_t_traj), sys.nStates);
-    for n=1:lqrParam.nSteps%length(S_t_traj)
-
-        
-        
-        % Variable time step code
+    eVals = zeros(lqrParam.nSteps, sys.nStates);
+    % Calculate feedback gains
+    for n=1:lqrParam.nSteps
         tn = (n-1)*h;
-        [~, t_Si] = min(abs(S_t_traj - tn)); % t index in S_traj
-        Sn = reshape(S_traj(t_Si, :), sys.nStates, sys.nStates);
-        K(n, :) = R_inv*Blin_t(S_t_traj(t_Si))'*Sn;
-
-%         % Original fixed step code
-%         Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
-%         tn = S_t_traj(n);
-%         K(n, :) = R_inv*Blin_t(tn)'*Sn;
-%         % End of original fixed step code
-        
-
-%         eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
+        % Get solution to differential Ricatti equation at time tn
+        Sn = deval(S_sol, tn);
+        Sn = reshape(Sn, sys.nStates, sys.nStates);
+        % Calculate gain for time tn
+        K(n, :) = R_inv*Blin_t(tn)'*Sn;
+        % Calculate eigenvalues of closed loop system
+        eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
     end
-    % Flip K so it's forwards in time
-%     lqrParam.K = flip(K, 1);
     lqrParam.K = K;
-
-    % Test - using LQR calculated at each trajectory point rather than
-    % TVLQR
-%     lqrParam.K = K;
-    
-    %%% DEBUGGING
-    for n = 1:length(K), disp([num2str(n) ': ' num2str(S_t_traj(n)) ', ' num2str(lqrParam.K(n, :))]); end
-    figure; hold on;
-    for n=1:6, plot(linspace(t0, tf, lqrParam.nSteps), x0(n, :)); end
-    plot(linspace(t0, tf, lqrParam.nSteps), u0);
-    xlabel('t (s)');
-    legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot', 'u')
-    %%% END DEBUGGING
-
-%     lqrParam.eVals = flip(eVals, 1);
+    lqrParam.eVals = eVals;
     lqrParam.K_p = chebfun(lqrParam.K, 'equi');
     % Initialise u_lqr()
     u_lqr(0, 0, lqrParam.K_p, tIdxFun);

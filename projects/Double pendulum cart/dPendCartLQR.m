@@ -23,7 +23,7 @@ disp('Loading nominal trajectory');
 
 % lqr.Q = .1*diag([1 5 5 0 0 0]); lqr.R = 1; lqr.Q_f = lqr.Q;
 
-[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_nobob_80_dircol_0_5usq_50uMx (2).mat');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+[xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_150_dircol_1usq_25uMx');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
 sys.param = param.physProp;
 %'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
 [~, nPoints] = size(xnom);
@@ -50,14 +50,14 @@ disp('Calculating finite horizon LQR gains');
 [lqr, u_cl_fun, tIdxFun] = tvLqrDirCol(sys, lqr, [0 T], xnom, unom);
 % return;
 % Change initial state
-x_zero = [0 0 0 0 0 0];
-% x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
+% x_zero = [0 0 0 0 0 0];
+x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
 % % Perturb system physical properties
-% sys.param.b1 = 0.25;
-% sys.param.b2 = 0.0075;
-% sys.param.m2 = sys.param.m2*1.05;
-% sys.param.b3 = sys.param.b3*2;
-% sys.param.m3 = sys.param.m3*1.05;
+sys.param.b1 = 0.25;
+sys.param.b2 = 0.0075;
+sys.param.m2 = sys.param.m2*1.05;
+sys.param.b3 = sys.param.b3*1.05;
+sys.param.m3 = sys.param.m3*1.05;
 
 % sys.param.b
 % ZOH input function
@@ -67,15 +67,17 @@ disp('Simulating open- and closed-loop trajectories of perturbed system');
 
 % Open loop simulation with as many steps as nominal trajectory
 % [t_vect_ol, x_traj_ol, u_traj_ol] = rk4(@(t, x, u) sys.x_dot_fun(t, x, u, sys.param), u_ol, [t0(1) t0(end)], x_zero, nKnotPoints-1);
-[t_vect_ol, x_traj_ol] = ode45(@(t, x) sys.x_dot_fun(t, x, u_ol(t, x), sys.param), [t0(1) t0(end)], x_zero);
-
+ol_sol = ode45(@(t, x) sys.x_dot_fun(t, x, u_ol(t, x), sys.param), [t0(1) t0(end)], x_zero);
+x_traj_ol = deval(ol_sol, t0);
+ 
 % Closed loop simulation
-[t_vect_cl, x_traj_cl, u_traj_cl] = rk4(@(t, x, u) sys.x_dot_fun(t, x, u, sys.param), u_cl_fun, [0 T], x_zero, lqr.nSteps*10);
-[t_vect_cl2, x_traj_cl2] = ode45(@(t, x) sys.x_dot_fun(t, x, u_cl_fun(t, x), sys.param), [t0(1) t0(end)], x_zero);
+% [t_vect_cl, x_traj_cl, u_traj_cl] = rk4(@(t, x, u) sys.x_dot_fun(t, x, u, sys.param), u_cl_fun, [0 T], x_zero, lqr.nSteps*10);
+cl_sol = ode45(@(t, x) sys.x_dot_fun(t, x, u_cl_fun(t, x), sys.param), [t0(1) t0(end)], x_zero);
+x_traj_cl = deval(cl_sol, t0);
 
 disp('Plot system response comparison');
 % Plot comparison of state trajectories
-plotTrajComp({t0, t_vect_ol, t_vect_cl2}, {xnom, x_traj_ol, x_traj_cl2}, 2, 3, ...
+plotTrajComp({t0, t0, t0}, {xnom, x_traj_ol, x_traj_cl}, 2, 3, ...
     [1 2 3 4 5 6], {':k', 'b', 'm'}, 'Double pendulum cart', ...
     {'q1', 'q2', 'q3', 'q1 dot', 'q2 dot', 'q3 dot'}, {'Nominal', 'Open loop', 'Closed loop'});
 % Input force trajectories
