@@ -86,27 +86,48 @@ function [lqrParam, u_cl_fun, tIdxFun] = tvLqr(sys, lqrParam, tspan, x0, u0)
     S_dot = @(t, S, u) -(S*Alin_t(t) + Alin_t(t)'*S - S*Blin_t(t)*R_inv*Blin_t(t)'*S + lqrParam.Q);
     S_dot_wrapper = @(t, S, u) reshape(S_dot(t, reshape(S, sys.nStates, sys.nStates), u), sys.nStates^2, 1);
     % Solve differential Ricatti equation
-    [S_t_traj, S_traj, ~] = rk4(S_dot_wrapper, @(t, S) 0, [tf t0], reshape(S_f, sys.nStates^2, 1), lqrParam.nSteps);
-    K = zeros(length(S_t_traj), sys.nStates);
+%     % Fixed time step (using rk4())
+%     [S_t_traj, S_traj, ~] = rk4(S_dot_wrapper, @(t, S) 0, [tf t0], reshape(S_f, sys.nStates^2, 1), lqrParam.nSteps);
+    % Variable time step using ode45()
+    [S_t_traj, S_traj] = ode45(@(t, S) S_dot_wrapper(t, S, 0), [tf t0], reshape(S_f, sys.nStates^2, 1));
+    S_t_traj = flip(S_t_traj);
+    S_traj = flip(S_traj);
+%     K = zeros(length(S_t_traj), sys.nStates);
+    K = zeros(lqrParam.nSteps, sys.nStates);
     eVals = zeros(length(S_t_traj), sys.nStates);
-    for n=1:length(S_t_traj)
-        Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
-        tn = S_t_traj(n);
-        K(n, :) = R_inv*Blin_t(tn)'*Sn;
+    for n=1:lqrParam.nSteps%length(S_t_traj)
+
+        
+        
+        % Variable time step code
+        tn = (n-1)*h;
+        [~, t_Si] = min(abs(S_t_traj - tn)); % t index in S_traj
+        Sn = reshape(S_traj(t_Si, :), sys.nStates, sys.nStates);
+        K(n, :) = R_inv*Blin_t(S_t_traj(t_Si))'*Sn;
+
+%         % Original fixed step code
+%         Sn = reshape(S_traj(n, :), sys.nStates, sys.nStates);
+%         tn = S_t_traj(n);
+%         K(n, :) = R_inv*Blin_t(tn)'*Sn;
+%         % End of original fixed step code
+        
+
 %         eVals(n, :) = eig(Alin_t(tn)-Blin_t(tn)*K(n, :));
     end
     % Flip K so it's forwards in time
-    lqrParam.K = flip(K, 1);
+%     lqrParam.K = flip(K, 1);
+    lqrParam.K = K;
 
     % Test - using LQR calculated at each trajectory point rather than
     % TVLQR
 %     lqrParam.K = K;
     
     %%% DEBUGGING
-    for n = 1:length(K), disp([num2str(n) ', ' num2str(lqrParam.K(n, :))]); end
+    for n = 1:length(K), disp([num2str(n) ': ' num2str(S_t_traj(n)) ', ' num2str(lqrParam.K(n, :))]); end
     figure; hold on;
-    for n=1:6, plot(x0(n, :)); end
-    plot(u0);
+    for n=1:6, plot(linspace(t0, tf, lqrParam.nSteps), x0(n, :)); end
+    plot(linspace(t0, tf, lqrParam.nSteps), u0);
+    xlabel('t (s)');
     legend('q1', 'q2', 'q3', 'q1dot', 'q2dot','q3dot', 'u')
     %%% END DEBUGGING
 
