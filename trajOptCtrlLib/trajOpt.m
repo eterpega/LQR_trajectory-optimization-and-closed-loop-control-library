@@ -1,5 +1,6 @@
-function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, cost, nPoints, x0, xf, guess, xLims, uMax, tLims)
+function [traj, u, T, param, exitflag, output, timeStop] = trajOpt(sys, method, gradType, cost, nPoints, x0, xf, guess, xLims, uMax, tLims)
     close all; clear functions;
+    clear costfun; % Doesn't seem to be happening.
     
     % System mechanics properties
     param.physProp = orderfields(sys.param);
@@ -97,8 +98,8 @@ function [traj, u, T, param, exitflag, output] = trajOpt(sys, method, gradType, 
     ub = [x0' repmat(xmax', 1, param.nKnotPoints-2) xf' uMax*ones(1, uLen) tmax];
     timeStart = tic;
     [x, fval, exitflag, output] = fmincon(@(decVars)costfun(decVars, param), guess, [], [], [], [], lb, ub, @(decVars) nlConFun(decVars, param), options);
-    timeStop = toc(timeStart);
-    disp(['Trajectory optimization took ' num2str(floor(timeStop/60)) ':' num2str(floor(mod(timeStop/60, 1)*60), '%02i')]);
+    timeStop = floor(toc(timeStart)/60);
+    disp(['Trajectory optimization took ' num2str(timeStop) ':' num2str(floor(mod(timeStop/60, 1)*60), '%02i')]);
     % Repackage decision variables as states, controls and end time
     T = x(param.tIdx);
     traj = reshape(x(param.xIdx(1):param.xIdx(2)), param.nStates, param.nKnotPoints);
@@ -108,6 +109,9 @@ end
 function [cost, grad] = costfun(decVars, param)
     persistent R S
     
+%     if(~isempty(R))
+%         [m, n] = size(R);
+%         if
     if isempty(R)
         % Second derivative of u
         % Create R
