@@ -60,8 +60,8 @@ function animTraj(traj, t, p, coordVars, trail, speed, filename)
             end
             movePoly(coordVars{j}{1}, x, y, ang);
         end
-%         title(sprintf('t: %2.2fs', t(n)));
-        title(sprintf('t: %2.2fs', n));
+        title(sprintf('t: %2.2fs', t(n)));
+%         title(sprintf('t: %2.2fs', n));
 
         % Trails
         if trailson
