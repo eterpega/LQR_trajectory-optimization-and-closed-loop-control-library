@@ -23,7 +23,7 @@ disp('Loading nominal trajectory');
 
 % lqr.Q = .1*diag([1 5 5 0 0 0]); lqr.R = 1; lqr.Q_f = lqr.Q;
 
-[xnom, unom, T, param, tmp] = loadTrajectory('1012');%doublePendCart_150_dircol_1usq_25uMx');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+[xnom, unom, T, param, tmp] = loadTrajectory('1013');%doublePendCart_150_dircol_1usq_25uMx');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
 sys.param = param.physProp;
 %'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
 [~, nPoints] = size(xnom);
@@ -53,11 +53,11 @@ disp('Calculating finite horizon LQR gains');
 x_zero = [0 0 0 0 0 0];
 % x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
 % % Perturb system physical properties
-sys.param.b1 = 0.05;
-sys.param.b2 = sys.param.b2*1.01;
-sys.param.b3 = sys.param.b3*1.01;
-sys.param.m2 = sys.param.m2*1.01;
-sys.param.m3 = sys.param.m3*1.01;
+sys.param.b1 = 0.1;
+sys.param.b2 = sys.param.b2*1.05;
+sys.param.b3 = sys.param.b3*1.05;
+sys.param.m2 = sys.param.m2*1.05;
+sys.param.m3 = sys.param.m3*1.05;
 
 % sys.param.b
 % ZOH input function
