@@ -22,8 +22,13 @@ disp('Loading nominal trajectory');
 % Smoothed u: doublePendCart_80_dircol_1usq_50uMx
 
 % lqr.Q = .1*diag([1 5 5 0 0 0]); lqr.R = 1; lqr.Q_f = lqr.Q;
+<<<<<<< HEAD:projects/Double pendulum cart/dPendCartLQR_inc_encoder_test.m
 % doublePendCart_150_dircol_1usq_25uMx % First equilibrium point
 [xnom, unom, T, param, tmp] = loadTrajectory('doublePendCart_150_dircol_1usq_50uMx');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+=======
+
+[xnom, unom, T, param, tmp] = loadTrajectory('1013');%doublePendCart_150_dircol_1usq_25uMx');   %, doublePendCart_240_dircol_1Tsq_1usq_50uMx, doublePendCart_150_dircol_1usq_25uMx  doublePendCart_240_dircol_1Tsq_1usq_50uMx
+>>>>>>> 517516febf6516fe4b8dab865e58beea24697ad4:projects/Double pendulum cart/dPendCartLQR.m
 sys.param = param.physProp;
 %'doublePendCart_120_dircol_10Tsq_0_25usq_40uMx'); % Works
 [~, nPoints] = size(xnom);
@@ -34,7 +39,11 @@ t0 = linspace(0, T, nPoints);
 % Create LQR structure
 lqr.Q = 1*eye(6);
 % lqr.Q = .0001*diag([1 5 5 1 5 5]);
+<<<<<<< HEAD:projects/Double pendulum cart/dPendCartLQR_inc_encoder_test.m
 % lqr.Q = diag([1 2.5 2.5 .05 .1 .1]); % Works with doublePendCart_150_dircol_1usq_25uMx
+=======
+lqr.Q = diag([.5 2.5 2.5 .05 .1 .1]);
+>>>>>>> 517516febf6516fe4b8dab865e58beea24697ad4:projects/Double pendulum cart/dPendCartLQR.m
 lqr.R = 1;
 % lqr.Q_f = .5*eye(6);%diag([5 5 5 1 1 1]); %5*eye(sys.nStates);
 % lqr.Q_f = zeros(6, 6);%diag([1 5 5 .5 .5 .5]);
@@ -47,13 +56,22 @@ disp('Calculating finite horizon LQR gains');
 [lqr, u_cl_fun, tIdxFun] = tvLqrDirCol(sys, lqr, [0 T], xnom, unom);
 % return;
 % Change initial state
+<<<<<<< HEAD:projects/Double pendulum cart/dPendCartLQR_inc_encoder_test.m
 x_zero = [0 0 0 0 0 0]';
 % x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
 % % Perturb system physical properties
 sys.param.b1 = 0.25;
 % sys.param.b2 = 0.00075;
 sys.param.m2 = sys.param.m2*1.05;
+=======
+x_zero = [0 0 0 0 0 0];
+% x_zero = [-.5 -30*pi/180 30*pi/180 0 0 0]';
+% % Perturb system physical properties
+sys.param.b1 = 0.1;
+sys.param.b2 = sys.param.b2*1.05;
+>>>>>>> 517516febf6516fe4b8dab865e58beea24697ad4:projects/Double pendulum cart/dPendCartLQR.m
 sys.param.b3 = sys.param.b3*1.05;
+sys.param.m2 = sys.param.m2*1.05;
 sys.param.m3 = sys.param.m3*1.05;
 
 % sys.param.b
@@ -102,6 +120,12 @@ plotTrajComp({enc.Trajectory.xIn.t, enc.Trajectory.xEst.t}, {enc.Trajectory.xIn.
 % plotTrajComp({t0, t_vect_ol, t_vect_cl}, {unom, u_traj_ol, u_traj_cl}, 1, 1, ...
 %     [1], {':k', 'b', 'm'}, 'Pendulum cart (point mass)', ...
 %     {'u'}, {'Nominal', 'Open loop', 'Closed loop'}); %#ok<NBRAK>
+<<<<<<< HEAD:projects/Double pendulum cart/dPendCartLQR_inc_encoder_test.m
 % % plotTrajComp({t0, t0}, {unom, u_traj_cl}, 1, 1, ...
 % %     [1], {'b', 'm'}, 'Pendulum cart (point mass)', ...
 % %     {'u'}, {'Open loop', 'Closed loop'}); %#ok<NBRAK>
+=======
+plotTrajComp({t0, t0}, {unom, u_traj_cl}, 1, 1, ...
+    [1], {'b', 'm'}, 'Pendulum cart (point mass)', ...
+    {'u'}, {'Open loop', 'Closed loop'}); %#ok<NBRAK>
+>>>>>>> 517516febf6516fe4b8dab865e58beea24697ad4:projects/Double pendulum cart/dPendCartLQR.m

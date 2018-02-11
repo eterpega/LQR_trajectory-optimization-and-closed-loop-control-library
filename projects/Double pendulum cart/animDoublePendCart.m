@@ -1,4 +1,8 @@
+% traj = x_traj_cl;
+% t = t0;
+
 [m, n] = size(traj);
+
 % t = linspace(0, T, n);
 f = figure;
 hold on; axis equal; grid on;
@@ -7,7 +11,7 @@ xlim(xlimits);
 ylim([-1 1.5]); 
 
 plot(xlimits, [0 0], 'k');
-cart = createBox(0, 0, .25, 0, .5, .25, 0, [.9 .5 .1]);
+cart = createBox(0, 0, .15, 0, .3, .25, 0, [.9 .5 .1]);
 pend1 = createRod(traj(1, 1), .125, 0, 0, .025, sys.param.l2, traj(2, 1), 12, [.9 .9 0]);
 pend2 = createRod(traj(1, 1), .125+sys.param.l2, 0, 0, .025, sys.param.l3, traj(3, 1), 12, [.1 .5 .9]);
 
