@@ -1,13 +1,13 @@
 % State vector
 % CMD
-
+clear serialCallback
 global messageData messageReceived
 
-messageData = 0;
+messageData = [];
 messageReceived = true;
 
-s = serial('COM3');
-set(s, 'BaudRate', 921600);%115200);
+s = serial('COM5');
+set(s, 'BaudRate', 921600);
 
 % s.Terminator = 'LF';%'CR';
 % s.BytesAvailableFcnMode = 'terminator';
@@ -15,7 +15,7 @@ set(s, 'BaudRate', 921600);%115200);
 
 % s.Terminator = 'LF';%'CR';
 s.BytesAvailableFcnMode = 'byte';
-s.BytesAvailableFcnCount = 1;
+s.BytesAvailableFcnCount = 34;
 s.BytesAvailableFcn = @serialCallback;
 
 
@@ -34,7 +34,7 @@ data = [uint8(0) typecast(uint32(5), 'uint8')];
 startTime = tic;
 for j = 1:length(data)
 %     disp(['Writing ' num2str(data(j))]);
-    fwrite(s, data(j));
+%     fwrite(s, data(j));
 end
 toc(startTime)
 disp('Transfer complete')

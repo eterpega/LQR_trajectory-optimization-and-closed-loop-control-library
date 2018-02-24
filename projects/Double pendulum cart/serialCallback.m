@@ -1,18 +1,6 @@
 function serialCallback(obj, ~)
     global messageData messageReceived
-    persistent byteCount buffer
-    
-    if(isempty(byteCount)) 
-        byteCount = 0;
-        buffer = zeros(1, 34);
-    end
-    
-%     str = fscanf(obj);
-%     disp(str);
-	byteIn = fscanf(obj);
-    buffer(byteCount) = byteIn;
-    byteCount = byteCount + 1;
-    if(byteCount == 34)
-        messageReceived = true;
-    
+    buffer = uint8(fread(obj, 34));
+    data = buffer(1:2)
+    typecast(buffer(3:end), 'single')
 end
