@@ -1,5 +1,3 @@
-% Cubic Hermite spline (I believe)
-% https://dsp.stackexchange.com/questions/18265/bicubic-interpolation/18273#18273
 % cubic test function
 % function cubic_test
 
@@ -21,19 +19,19 @@ clear vars;
 % Another go
 f = @(t) sin(t);
 df = @(t) cos(t);
-t = 0:.5:10;
-
+ddf = @(t) -sin(t);
+t = 0:.1:6;
 ti = [];
 fi = [];
 dfi = [];
-steps = 20;
+steps = 30;
 for ts = linspace(0, t(end)-t(end)/steps, steps)
-    t0 = ts;
+    t0 = ts
     t1 = ts+t(end)/steps;
     f0 = f(t0);
     f1 = f(t1);
     df0 = df(t0);
-    df1 = df(t1);
+    ddf0 = ddf(t0);
     fi(end+1) = f0;
     ti(end+1) = t0;
     dfi(end+1) = df0;
@@ -41,21 +39,17 @@ for ts = linspace(0, t(end)-t(end)/steps, steps)
     kstep = 5;
     dt = t1-t0;
     for k = 1/kstep:1/kstep:1
-        k
-        t0+(k*dt)
         ti(end+1) = t0+(k*dt);
-        fi(end+1) =    (df1 - 2*f1 + df0 + 2*f0)*k^3 + ...
-                (3*f1 - df1 - 2*df0 - 3*f0)*k^2 + df0*k + f0;
-        dfi(end+1) = 3*(df1 - 2*f1 + df0 + 2*f0)*k^2 + 2*(3*f1 - df1 - 3*f0 - 2*df0)*k + df0;
-%         fi(end+1) =    (df1 - 2*f1 + df0 + 2*f0)*k^3 + ...
-%                 (3*f1 - df1 - 3*f0)*k^2 + df0*k + f0;
+        d = f0;
+        c = df0;
+        b = ddf0/2;
+        a = f1 - b - c - d;
+        fi(end+1) = a*k^3 + b*k^2 + c*k + d;
     end
 end
 figure; hold on; grid on;
-plot(t, subs(f, t), '-.');
+plot(t, f(t), '-.');
 plot(ti, fi);
-% plot(ti, dfi);
-% plot(t, df(t));
 plot(linspace(0, t(end), steps+1), f(linspace(0, t(end), steps+1)), 'xk')
 return
 

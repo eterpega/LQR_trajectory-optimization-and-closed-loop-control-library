@@ -1,6 +1,9 @@
 % traj = x_traj_cl;
 % t = t0;
 
+traj = x_traj_cl;
+t = linspace(0, T, nPoints)
+
 [m, n] = size(traj);
 
 % t = linspace(0, T, n);
