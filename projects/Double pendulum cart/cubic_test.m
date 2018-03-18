@@ -3,22 +3,9 @@
 % cubic test function
 % function cubic_test
 
-clear vars;
+% clear vars;
 
-% x = 0:.1:10;%[0 1 2.5 3.6 5 7 8.1 10];
-% y = sin(x);
-% xx = 0:.1:.5;
-% yy = spline(x,y,xx);
-% figure;
-% plot(x,y,'o',xx,yy)
-
-% % Some data
-% t = 0.3:0.01:0.5;
-% dt = t(end) - t(end-1);
-% f = sin(2*pi*0.5*t);
-% df = diff(f)/dt;
-
-% Another go
+% Another go (continuous functions)
 f = @(t) sin(t);
 df = @(t) cos(t);
 t = 0:.5:10;
@@ -26,7 +13,7 @@ t = 0:.5:10;
 ti = [];
 fi = [];
 dfi = [];
-steps = 20;
+steps = 10;
 for ts = linspace(0, t(end)-t(end)/steps, steps)
     t0 = ts;
     t1 = ts+t(end)/steps;
@@ -59,35 +46,25 @@ plot(ti, fi);
 plot(linspace(0, t(end), steps+1), f(linspace(0, t(end), steps+1)), 'xk')
 return
 
-
-
 % Some other data
-t = 0:.1:3;
-f = sin(t);%sin(2*pi*0.1*t);
+% t = 1:length(lqr.K(:,1));
+f = lqr.K(:,1)';
 dt = t(end) - t(end-1);
 df = diff(f)/dt;
-% df = [df(1) df];
-
-% % Still more data
-% 
-% t = 0:1:10;
-% f = sin(t);
-% dt = t(end) - t(end-1);
-% df = diff(f)/dt;
-
+df = [df df(end)];
 
 figure;
-plot(t, f, '.', t, df, '-.');
+plot(t, f, '.');%, t, df, '-.');
 grid on
 % df(end+1) = df(end);
 
 % fi, ti, interpolated t and f vectors
 ti = [];
 fi = [];
-dfi =[];
+% dfi =[];
 
-ngrid = [1 2];%[5 6];%
-% ngrid = 1:length(t);
+% ngrid = [1 2];%[5 6];%
+ngrid = 1:20:length(t);
 dt = t(ngrid(2)) - t(ngrid(1));
 for n=1:length(ngrid)-1%1:length(t)-1
     t0 = t(ngrid(n));
@@ -105,9 +82,9 @@ for n=1:length(ngrid)-1%1:length(t)-1
         fi(end+1) =    (df1 - 2*f1 + df0 + 2*f0)*k^3 + ...
                 (3*f1 - df1 - 2*df0 - 3*f0)*k^2 + df0*k + f0;
     end
-    dfi = diff(fi)/((t(ngrid(2)) - t(ngrid(1)))/step);
+%     dfi = diff(fi)/((t(ngrid(2)) - t(ngrid(1)))/step);
 end
 hold on
 plot(ti, fi)
-plot(linspace(t(ngrid(1)), t(ngrid(2)), step), spline(t, f, linspace(t(ngrid(1)), t(ngrid(2)), step)))
+% plot(linspace(t(ngrid(1)), t(ngrid(2)), step), spline(t, f, linspace(t(ngrid(1)), t(ngrid(2)), step)))
 % plot(linspace(t(ngrid(1)), t(ngrid(2)), step), dfi);
